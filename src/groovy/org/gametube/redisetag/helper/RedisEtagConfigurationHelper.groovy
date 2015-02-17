@@ -21,10 +21,12 @@ class RedisEtagConfigurationHelper {
 	}
 
 	/**
-	 * Injects ETag handling methods: getRedisETag and evictRedisETag in controllers and services
+	 * Injects ETag handling methods: getRedisETag and evictRedisETag in
+	 * controllers and services
+	 *
 	 * @param mainContext bean with application's main Context
 	 */
-	static void injectRedisServiceForETag(def mainContext) {
+	static void injectRedisETagMethods(def mainContext) {
 
 		def gApp = mainContext.grailsApplication
 		def etagSrv = mainContext.redisCacheETagService
@@ -44,10 +46,10 @@ class RedisEtagConfigurationHelper {
 		clazzes += gApp.serviceClasses*.clazz
 		clazzes.each { cls ->
 			cls.metaClass.getRedisETag = { Map args ->
-				etagSrv.getRedisETag(args.name, args.id)
+				etagSrv.getRedisETag(args.type, args.id)
 			}
 			cls.metaClass.evictRedisETag = { Map args ->
-				etagSrv.evictRedisETag(args.name, args.id)
+				etagSrv.evictRedisETag(args.type, args.id)
 			}
 		}
 	}

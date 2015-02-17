@@ -33,7 +33,7 @@ class RedisCacheETagServiceSpec extends Specification {
 	}
 
 	@ConfineMetaClassChanges([DateTimeUtils, String])
-	void "That createETagValue creates an ETag Value using given params and currentTime"() {
+	void "That generateETagValueForObject creates an ETag Value using given params and currentTime"() {
 		given:
 			String id = 'objId'
 			String name = 'objName'
@@ -42,17 +42,17 @@ class RedisCacheETagServiceSpec extends Specification {
 				10000000l
 			}
 		when:
-			def result = service.createETagValue(name, id)
+			def result = service.generateETagValueForObject(name, id)
 		then:
 			result == (name + ':' + id + ':' + 10000000l.toString()).encodeAsMD5()
 	}
 
-	void "That createETagKey creates the redis object key with the proper format"() {
+	void "That getETagKeyForObject creates the redis object key with the proper format"() {
 		given:
 			String name = 'objName'
 			String id = 'objId'
 		when:
-			def result = service.createETagKey(name, id)
+			def result = service.getETagKeyForObject(name, id)
 		then:
 			result == "${prefix}${name}=${id}"
 	}

@@ -4,69 +4,74 @@ import grails.plugin.redis.RedisService
 import org.joda.time.DateTimeUtils
 
 /**
- * Service providing the basic cache, update and evict functionality for etags stored in redis
+ * Service providing the basic cache, update and evict functionality for etags
+ * stored in Redis
  */
 class RedisCacheETagService {
 	static transactional = false
 
 	String eTagStringPrefix = 'eTag:'
-	Integer defaultTTL = 60 * 60 * 24  //1 day
+	Integer defaultTTL = 60 * 60 * 24  // 1 day
 	Boolean enabled = true
 	RedisService redisService
 
 	/**
-	 * Returns the ETag stored in Redis for a given @objectName instance with id @objectIdentifier.
-	 * If it is not yet stored or it has expired, a new key/value pair will be created in Redis.
+	 * Returns the ETag stored in Redis for an object of the type @objectType
+	 * and with with ID @objectIdentifier.
+	 * If it is not yet stored or it has expired, a new key/value pair will be
+	 * created in Redis.
 	 *
-	 * @param objectName a class that belongs to Domain Class set
-	 * @param objectIdentifier the id of the instance to retrieve / create in redis
-	 * @return the hashCode of the value stored in redis. If the plugin is disabled a random UUID.
+	 * @param objectType the type of the object
+	 * @param objectIdentifier the ID of the object
+	 * @return the hashCode of the value stored in Redis. If the plugin is
+	 * disabled, a random UUID.
 	 */
-	String getRedisETag(String objectName, String objectIdentifier) {
+	String getRedisETag(String objectType, String objectIdentifier) {
 		if (!enabled) {
 			return UUID.randomUUID()
 		}
-		String key = createETagKey(objectName, objectIdentifier)
+		String key = getETagKeyForObject(objectType, objectIdentifier)
 		String cachedValue = redisService.get(key)
 		if (!cachedValue) {
-			cachedValue = createETagValue(objectName, objectIdentifier)
+			cachedValue = generateETagValueForObject(objectType, objectIdentifier)
 			redisService.setex(key, defaultTTL, cachedValue)
 		}
 		return cachedValue
 	}
 
 	/**
-	 * Evict the entry from the cache.
-	 * @param objectName a String containing the name of the object to evict from redis
-	 * @param objectIdentifier the id of the object to evict from redis
+	 * Evict and entry from the cache.
+	 *
+	 * @param objectType the type of the object
+	 * @param objectIdentifier the ID of the object
 	 */
-	void evictRedisETag(String objectName, String objectIdentifier) {
+	void evictRedisETag(String objectType, String objectIdentifier) {
 		if (enabled) {
-			redisService.expire(createETagKey(objectName, objectIdentifier), 0)
+			redisService.expire(getETagKeyForObject(objectType, objectIdentifier), 0)
 		}
 	}
 
 	/**
-	 * Utility method that creates the key used to manipulate the etag entries in redis
-	 * @param objectName
-	 * @param objectIdentifier the id of the object
-	 * @return the key created
+	 * Utility method that creates the key used to manipulate the etag entries
+	 * in Redis
+	 *
+	 * @param objectType the type of the object
+	 * @param objectIdentifier the ID of the object
+	 * @return a String containing the created key
 	 */
-	private String createETagKey(String objectName, String objectIdentifier) {
+	private String getETagKeyForObject(String objectName, String objectIdentifier) {
 		return eTagStringPrefix + "${objectName}=${objectIdentifier}"
 	}
 
 	/**
-	 * Utility method that creates a unique ETag value based on:
-	 * -objectName
-	 * -objectIdentifier
-	 * -current millisecond
+	 * Utility method that generates a unique ETag value based on the given
+	 * @objectName and @objectIdentifier, as well as the current millisecond
 	 *
-	 * @param objectName
-	 * @param objectIdentifier
-	 * @return a String
+	 * @param objectType the type of the object
+	 * @param objectIdentifier the ID of the object
+	 * @return a String containing the created value
 	 */
-	private String createETagValue(String objectName, String objectIdentifier) {
+	private String generateETagValueForObject(String objectName, String objectIdentifier) {
 		return "${objectName}:${objectIdentifier}:${DateTimeUtils.currentTimeMillis()}".encodeAsMD5()
 	}
 
