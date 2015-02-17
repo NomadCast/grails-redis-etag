@@ -29,3 +29,5 @@ dmg-misc-internal/
 dataSources.ids
 dataSources.xml
 .idea/
+.classpath
+.project
