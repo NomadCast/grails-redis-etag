@@ -29,17 +29,17 @@ class RedisEtagConfigurationHelper {
 	static void injectRedisETagMethods(def mainContext) {
 
 		def gApp = mainContext.grailsApplication
-		def etagSrv = mainContext.redisCacheETagService
+		def etagSrv = mainContext.redisETagService
 
-		def redisCacheConfigMap = mergeConfigMapsForRedisConnections(gApp, gApp.config.grails.etagRedisCache.connectiontouse ?: '')
+		def redisETagConfigMap = mergeConfigMapsForRedisConnections(gApp, gApp.config.grails.redisEtag.connectiontouse ?: 'eTag')
 
 		// once we re-inject one service or property, we must re-inject all of them
-		etagSrv.eTagStringPrefix = redisCacheConfigMap.eTagStringPrefix ?: 'eTag:'
+		etagSrv.eTagStringPrefix = redisETagConfigMap.eTagStringPrefix ?: 'eTag:'
 		// default ttl: 1 day
-		etagSrv.defaultTTL = redisCacheConfigMap.defaultTTL as Integer ?: 60 * 60 * 24
+		etagSrv.defaultTTL = redisETagConfigMap.defaultTTL as Integer ?: 60 * 60 * 24
 
-		etagSrv.enabled = redisCacheConfigMap?.enabled == false ?: true
-		etagSrv.redisService = mainContext."redisService${redisCacheConfigMap.connectionToUse.capitalize()}"
+		etagSrv.enabled = redisETagConfigMap?.enabled == false ?: true
+		etagSrv.redisService = mainContext."redisService${redisETagConfigMap.connectionToUse.capitalize()}"
 
 		def clazzes = []
 		clazzes += gApp.controllerClasses*.clazz

@@ -7,7 +7,7 @@ import org.joda.time.DateTimeUtils
  * Service providing the basic cache, update and evict functionality for etags
  * stored in Redis
  */
-class RedisCacheETagService {
+class RedisETagService {
 	static transactional = false
 
 	String eTagStringPrefix = 'eTag:'

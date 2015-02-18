@@ -12,9 +12,9 @@ import spock.util.mop.ConfineMetaClassChanges
 /**
  * See the API for {@link grails.test.mixin.services.ServiceUnitTestMixin} for usage instructions
  */
-@TestFor(RedisCacheETagService)
+@TestFor(RedisETagService)
 @TestMixin(ServiceUnitTestMixin)
-class RedisCacheETagServiceSpec extends Specification {
+class RedisETagServiceSpec extends Specification {
 
 
 	RedisService redisService
