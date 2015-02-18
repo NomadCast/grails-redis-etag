@@ -12,9 +12,11 @@ class RedisEtagGrailsPlugin {
 	def author = "Tamer Shahin"
 	def authorEmail = "tamer.shahin@gmail.com "
 	def description = '''\
-This plugin is intended to work in pair with the Caching Headers Plugin, in particular it's providing a solution to generate, store and retrieve a ETag value
-that relies on Redis. This means ETags will be stored and retrieved from Redis, thus giving the possibility to centralize ETag handling
-between multiple instances of the same application.
+This plugin is intended to work in pair with the [Grails cache-headers plugin], in
+particular it's providing a solution to generate, store and retrieve ETag values
+in Redis, avoiding DB hits are avoided. Redis is thus used as a central cache for
+ETags, and the plugin can be used by multiple instances of the same application
+that will share the same "ETag repository".
 '''
 
 	def documentation = "https://github.com/NomadCast/grails-redis-etag/blob/master/README.md"
