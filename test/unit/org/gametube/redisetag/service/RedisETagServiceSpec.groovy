@@ -9,27 +9,19 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.mop.ConfineMetaClassChanges
 
-/**
- * See the API for {@link grails.test.mixin.services.ServiceUnitTestMixin} for usage instructions
- */
 @TestFor(RedisETagService)
 @TestMixin(ServiceUnitTestMixin)
 class RedisETagServiceSpec extends Specification {
-
 
 	RedisService redisService
 	@Shared
 	String prefix = 'ETagPrefix|'
 	@Shared
-	Integer defaultTTL = 100
+	int defaultTTL = 100
 
 	def setup() {
-		service.redisService = redisService = Mock(RedisService)
-		service.eTagStringPrefix = prefix
-		service.defaultTTL = defaultTTL
-	}
-
-	def cleanup() {
+		redisService = Mock(RedisService)
+		service.configure(prefix, defaultTTL, true, redisService)
 	}
 
 	@ConfineMetaClassChanges([DateTimeUtils, String])
@@ -37,14 +29,14 @@ class RedisETagServiceSpec extends Specification {
 		given:
 			String id = 'objId'
 			String name = 'objName'
-			String.metaClass.encodeAsMD5 = { return delegate }
-			DateTimeUtils.metaClass.'static'.currentTimeMillis = {
-				10000000l
+			String.metaClass.encodeAsMD5 = { -> return delegate }
+			DateTimeUtils.metaClass.static.currentTimeMillis = { ->
+				10000000L
 			}
 		when:
 			def result = service.generateETagValueForObject(name, id)
 		then:
-			result == (name + ':' + id + ':' + 10000000l.toString()).encodeAsMD5()
+			result == (name + ':' + id + ':' + 10000000L).encodeAsMD5()
 	}
 
 	void "That getETagKeyForObject creates the redis object key with the proper format"() {
@@ -81,7 +73,7 @@ class RedisETagServiceSpec extends Specification {
 	void "That getETag returns a random UUID if the plugin is not enabled"() {
 		given:
 			String uuid = UUID.randomUUID()
-			UUID.metaClass.'static'.randomUUID = {
+			UUID.metaClass.static.randomUUID = { ->
 				uuid
 			}
 			service.enabled = false
@@ -110,11 +102,11 @@ class RedisETagServiceSpec extends Specification {
 		given:
 			String name = 'objName'
 			String id = 'objId'
-			String.metaClass.encodeAsMD5 = { return delegate }
-			DateTimeUtils.metaClass.'static'.currentTimeMillis = {
-				10000000l
+			String.metaClass.encodeAsMD5 = { -> return delegate }
+			DateTimeUtils.metaClass.static.currentTimeMillis = { ->
+				10000000L
 			}
-			String expectedValue = (name + ':' + id + ':' + 10000000l.toString()).encodeAsMD5()
+			String expectedValue = (name + ':' + id + ':' + 10000000L).encodeAsMD5()
 
 		when:
 			def result = service.getRedisETag(name, id)

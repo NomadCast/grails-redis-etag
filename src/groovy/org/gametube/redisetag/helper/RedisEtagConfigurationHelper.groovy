@@ -1,16 +1,22 @@
 package org.gametube.redisetag.helper
 
+import org.gametube.redisetag.service.RedisETagService
+
 /**
- * Created by tamer on 15/02/15.
+ * @author tamer
  */
 class RedisEtagConfigurationHelper {
+
+	static final String DEFAULT_ETAG_STRING_PREFIX = 'eTag:'
+	static final int DEFAULT_TTL = 60 * 60 * 24  // 1 day
+
 	/**
 	 * If the specified connection exists, use it. Otherwise use only base parameters
 	 * @return a Map instance with config info if any, an empty Map otherwise.
 	 */
 	static Map mergeConfigMapsForRedisConnections(application, String connectionToUse) {
 
-		def redisConfigMap = application.config.grails.redis ?: [:]
+		def redisConfigMap = application.config.grails.redis ?: [connections: [:].withDefault { [:] }]
 
 		if (!redisConfigMap.connections[connectionToUse]) {
 			connectionToUse = ''
@@ -26,29 +32,28 @@ class RedisEtagConfigurationHelper {
 	 *
 	 * @param mainContext bean with application's main Context
 	 */
-	static void injectRedisETagMethods(def mainContext) {
+	static void injectRedisETagMethods(mainContext) {
 
 		def gApp = mainContext.grailsApplication
-		def etagSrv = mainContext.redisETagService
+		RedisETagService etagSrv = mainContext.redisETagService
 
 		def redisETagConfigMap = mergeConfigMapsForRedisConnections(gApp, gApp.config.grails.redisEtag.connectiontouse ?: 'eTag')
 
 		// once we re-inject one service or property, we must re-inject all of them
-		etagSrv.eTagStringPrefix = redisETagConfigMap.eTagStringPrefix ?: 'eTag:'
-		// default ttl: 1 day
-		etagSrv.defaultTTL = redisETagConfigMap.defaultTTL as Integer ?: 60 * 60 * 24
+		String eTagStringPrefix = redisETagConfigMap.eTagStringPrefix ?: DEFAULT_ETAG_STRING_PREFIX
+		int defaultTTL = redisETagConfigMap.defaultTTL as Integer ?: DEFAULT_TTL
+		boolean enabled = redisETagConfigMap?.enabled == false ?: true
+		def redisService = mainContext."redisService${redisETagConfigMap.connectionToUse.capitalize()}"
+		etagSrv.configure(eTagStringPrefix, defaultTTL, enabled, redisService)
 
-		etagSrv.enabled = redisETagConfigMap?.enabled == false ?: true
-		etagSrv.redisService = mainContext."redisService${redisETagConfigMap.connectionToUse.capitalize()}"
-
-		def clazzes = []
-		clazzes += gApp.controllerClasses*.clazz
-		clazzes += gApp.serviceClasses*.clazz
-		clazzes.each { cls ->
-			cls.metaClass.getRedisETag = { Map args ->
+		def metaClasses = []
+		metaClasses.addAll gApp.controllerClasses*.clazz*.metaClass
+		metaClasses.addAll gApp.serviceClasses*.clazz*.metaClass
+		metaClasses.each { mc ->
+			mc.getRedisETag = { Map args ->
 				etagSrv.getRedisETag(args.type, args.id)
 			}
-			cls.metaClass.evictRedisETag = { Map args ->
+			mc.evictRedisETag = { Map args ->
 				etagSrv.evictRedisETag(args.type, args.id)
 			}
 		}
