@@ -1,25 +1,26 @@
 package org.gametube.redisetag.service
 
 import grails.plugin.redis.RedisService
+
+import org.gametube.redisetag.helper.RedisEtagConfigurationHelper
 import org.joda.time.DateTimeUtils
 
 /**
- * Service providing the basic cache, update and evict functionality for etags
- * stored in Redis
+ * Provides the basic cache, update and evict functionality for etags stored in Redis.
  */
 class RedisETagService {
+
 	static transactional = false
 
-	String eTagStringPrefix = 'eTag:'
-	Integer defaultTTL = 60 * 60 * 24  // 1 day
-	Boolean enabled = true
-	RedisService redisService
+	private String eTagStringPrefix = RedisEtagConfigurationHelper.DEFAULT_ETAG_STRING_PREFIX
+	private int defaultTTL = RedisEtagConfigurationHelper.DEFAULT_TTL
+	private boolean enabled = true
+	private RedisService redisService
 
 	/**
-	 * Returns the ETag stored in Redis for an object of the type @objectType
-	 * and with with ID @objectIdentifier.
-	 * If it is not yet stored or it has expired, a new key/value pair will be
-	 * created in Redis.
+	 * Returns the ETag stored in Redis for an object of the type @objectType and
+	 * with with ID @objectIdentifier. If it is not yet stored or it has expired, a
+	 * new key/value pair will be created in Redis.
 	 *
 	 * @param objectType the type of the object
 	 * @param objectIdentifier the ID of the object
@@ -40,7 +41,7 @@ class RedisETagService {
 	}
 
 	/**
-	 * Evict and entry from the cache.
+	 * Evict an entry from the cache.
 	 *
 	 * @param objectType the type of the object
 	 * @param objectIdentifier the ID of the object
@@ -51,28 +52,33 @@ class RedisETagService {
 		}
 	}
 
-	/**
-	 * Utility method that creates the key used to manipulate the etag entries
-	 * in Redis
-	 *
-	 * @param objectType the type of the object
-	 * @param objectIdentifier the ID of the object
-	 * @return a String containing the created key
-	 */
-	private String getETagKeyForObject(String objectName, String objectIdentifier) {
-		return eTagStringPrefix + "${objectName}=${objectIdentifier}"
+	void configure(String eTagStringPrefix, int defaultTTL, boolean enabled, RedisService redisService) {
+		this.eTagStringPrefix = eTagStringPrefix
+		this.defaultTTL = defaultTTL
+		this.enabled = enabled
+		this.redisService = redisService
 	}
 
 	/**
-	 * Utility method that generates a unique ETag value based on the given
-	 * @objectName and @objectIdentifier, as well as the current millisecond
+	 * Creates the key used to manipulate the etag entries in Redis.
 	 *
 	 * @param objectType the type of the object
 	 * @param objectIdentifier the ID of the object
-	 * @return a String containing the created value
+	 * @return the created key
+	 */
+	private String getETagKeyForObject(String objectName, String objectIdentifier) {
+		return "${eTagStringPrefix}${objectName}=${objectIdentifier}"
+	}
+
+	/**
+	 * Generates a unique ETag value based on the given @objectName and
+	 * @objectIdentifier, as well as the current millisecond.
+	 *
+	 * @param objectType the type of the object
+	 * @param objectIdentifier the ID of the object
+	 * @return the created value
 	 */
 	private String generateETagValueForObject(String objectName, String objectIdentifier) {
 		return "${objectName}:${objectIdentifier}:${DateTimeUtils.currentTimeMillis()}".encodeAsMD5()
 	}
-
 }
