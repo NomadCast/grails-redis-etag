@@ -7,7 +7,7 @@ Installation
 ------------
 Dependency :
 
-    compile ':redis-etag:0.1'
+    compile ':redis-etag:1.0'
 
 In order to access the Redis server where ETags are stored, the plugin uses the configuration of the [Grails redis plugin].
 

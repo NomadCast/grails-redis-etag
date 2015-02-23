@@ -1,13 +1,13 @@
 import org.gametube.redisetag.helper.RedisEtagConfigurationHelper
 
 class RedisEtagGrailsPlugin {
-	def version = "0.1-SNAPSHOT"
+	def version = "1.0"
 	def grailsVersion = "2.0 > *"
 	def title = "Redis Etag Plugin"
 	def author = "Tamer Shahin"
 	def authorEmail = "tamer.shahin@gmail.com "
 	def description = '''\
-Works in pair with the [Grails cache-headers plugin], providing a solution to generate, store
+Works in pair with the Grails cache-headers plugin, providing a solution to generate, store
 and retrieve ETag values in Redis, avoiding DB hits. Redis is thus used as a central cache for
 ETags, and the plugin can be used by multiple instances of the same application
 that will share the same "ETag repository".
