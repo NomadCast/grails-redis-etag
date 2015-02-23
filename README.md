@@ -98,7 +98,7 @@ Examples:
 Release Notes
 =============
 
-* 0.1   - released 18/02/2015 - this is the first released revision of the plugin.
+* 1.0   - released 23/02/2015 - this is the first released revision of the plugin.
 
 Credits
 =======
