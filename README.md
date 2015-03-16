@@ -7,7 +7,7 @@ Installation
 ------------
 Dependency :
 
-    compile ':redis-etag:1.0'
+    compile ':redis-etag:1.1'
 
 In order to access the Redis server where ETags are stored, the plugin uses the configuration of the [Grails redis plugin].
 
@@ -99,6 +99,7 @@ Release Notes
 =============
 
 * 1.0   - released 23/02/2015 - this is the first released revision of the plugin.
+* 1.1   - released 16/03/2015 - now wildcard (*) is accepted inside eviction id String.
 
 Credits
 =======

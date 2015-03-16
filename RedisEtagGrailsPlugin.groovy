@@ -1,7 +1,7 @@
 import org.gametube.redisetag.helper.RedisEtagConfigurationHelper
 
 class RedisEtagGrailsPlugin {
-	def version = "1.0"
+	def version = "1.1"
 	def grailsVersion = "2.0 > *"
 	def title = "Redis Etag Plugin"
 	def author = "Tamer Shahin"
