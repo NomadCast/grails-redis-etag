@@ -5,6 +5,9 @@ import grails.test.mixin.TestFor
 import grails.test.mixin.TestMixin
 import grails.test.mixin.services.ServiceUnitTestMixin
 import org.joda.time.DateTimeUtils
+import redis.clients.jedis.Client
+import redis.clients.jedis.Jedis
+import redis.clients.jedis.Pipeline
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.mop.ConfineMetaClassChanges
@@ -49,7 +52,7 @@ class RedisETagServiceSpec extends Specification {
 			result == "${prefix}${name}=${id}"
 	}
 
-	void "That evicEtag does nothing if the plugin is not enabled"() {
+	void "That evictEtag does nothing if the plugin is not enabled"() {
 		given:
 			service.enabled = false
 		when:
@@ -59,15 +62,53 @@ class RedisETagServiceSpec extends Specification {
 			0 * _
 	}
 
-	void "That evicEtag correctly calls redis to evict the given obj"() {
+	void "That evictEtag correctly calls redis to evict the given obj"() {
 		given:
 			String name = 'objName'
 			String id = 'objId'
+			Pipeline pipeline = Mock(Pipeline)
+			def keyBytes ="${prefix}${name}=${id}".bytes
+			Client client = Mock(Client)
 		when:
 			service.evictRedisETag(name, id)
 
 		then:
-			1 * redisService.methodMissing('expire', ["${prefix}${name}=${id}", 0])
+			1 * pipeline.getResponse(_)
+			1 * pipeline.getClient(keyBytes) >> {client}
+			1 * client.expire(keyBytes,0)
+			1 * redisService.withPipeline(_)>> { Closure cl ->
+				cl.call(pipeline)
+			}
+			0 * _
+	}
+
+	void "That evictEtag correctly calls redis to evict all objects whom keys match the wildcards"() {
+		given:
+			String name = 'objName'
+			String id = 'objId:page=*'
+			Pipeline pipeline = Mock(Pipeline)
+			Jedis redis = Mock(Jedis)
+			def keyBytes ="${prefix}${name}=${id}".bytes
+			Client client = Mock(Client)
+			Set<byte[]> redisReturnedKeys = ['objId:page=1'.bytes,'objId:page=2'.bytes] as Set
+		when:
+			service.evictRedisETag(name, id)
+
+		then:
+			1 * redis.keys(keyBytes) >> {
+				redisReturnedKeys
+			}
+			1 * redisService.withRedis(_) >> { Closure cl ->
+				cl.call(redis)
+			}
+			2 * pipeline.getResponse(_)
+			2 * pipeline.getClient(_) >> {client}
+			1 * client.expire(redisReturnedKeys.first(),0)
+			1 * client.expire(redisReturnedKeys.last(),0)
+			1 * redisService.withPipeline(_)>> { Closure cl ->
+				cl.call(pipeline)
+			}
+			0 * _
 	}
 
 	void "That getETag returns a random UUID if the plugin is not enabled"() {

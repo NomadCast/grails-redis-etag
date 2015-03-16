@@ -4,6 +4,10 @@ import grails.plugin.redis.RedisService
 
 import org.gametube.redisetag.helper.RedisEtagConfigurationHelper
 import org.joda.time.DateTimeUtils
+import redis.clients.jedis.Jedis
+import redis.clients.jedis.Pipeline
+
+import java.util.regex.Pattern
 
 /**
  * Provides the basic cache, update and evict functionality for etags stored in Redis.
@@ -16,6 +20,8 @@ class RedisETagService {
 	private int defaultTTL = RedisEtagConfigurationHelper.DEFAULT_TTL
 	private boolean enabled = true
 	private RedisService redisService
+
+	static final Pattern WILDCARD_PATTERN = ~/.*[\*\?]+.*/
 
 	/**
 	 * Returns the ETag stored in Redis for an object of the type @objectType and
@@ -41,14 +47,39 @@ class RedisETagService {
 	}
 
 	/**
-	 * Evict an entry from the cache.
+	 * Evict an entry from the cache. If the provided parameters contain wildcards, all matching keys will be expired.
 	 *
-	 * @param objectType the type of the object
-	 * @param objectIdentifier the ID of the object
+	 * @param objectType the type of the object. May contain wildcards such as *
+	 * @param objectIdentifier the ID of the object. May contain wildcards such as *
 	 */
 	void evictRedisETag(String objectType, String objectIdentifier) {
-		if (enabled) {
-			redisService.expire(getETagKeyForObject(objectType, objectIdentifier), 0)
+		if (!enabled) {
+			return
+		}
+
+		String keyString = getETagKeyForObject(objectType, objectIdentifier)
+
+		// get the keys to evict depending on whether the key is a wildcard or not
+		Set keys = []
+		if (keyString.matches(WILDCARD_PATTERN)) {
+			redisService.withRedis { Jedis redis ->
+				keys = redis.keys(keyString.bytes)
+			}
+			if (log.isDebugEnabled()) {
+				log.debug("found ${keys.size()} keys for wildcard string '${keyString}'")
+			}
+		} else {
+			keys.add(keyString.bytes)
+		}
+
+		// expire all the keys
+		redisService.withPipeline { Pipeline pipeline ->
+			keys.each { byte[] key ->
+				pipeline.expire(key, 0) // setting expire time = 0 will work for keys already with ttl and the one without ttl
+				if (log.isDebugEnabled()) {
+					log.debug("evicted the key : ${new String(key)}")
+				}
+			}
 		}
 	}
 
