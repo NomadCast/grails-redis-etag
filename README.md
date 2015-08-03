@@ -100,6 +100,7 @@ Release Notes
 
 * 1.0   - released 23/02/2015 - this is the first released revision of the plugin.
 * 1.1   - released 16/03/2015 - now wildcard (*) is accepted inside eviction id String.
+* 1.2   - released 03/08/2015 - now based on [Grails redis plugin] 1.6.6 version instead of 1.5.0.
 
 Credits
 =======
